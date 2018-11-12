@@ -26,7 +26,7 @@ public class HttpRequestParser {
     private static final String REGEXP_APP_NAME = "\\/(.*?)[\\/\\?]";
     private static final String REGEXP_URI = "(?:.*?\\/){2}(.+(?=\\?)|.+)";
     private static final String REGEXP_SESSION_ID="[j]?sessionId=(.+(?=\\&)|.+)";
-    public static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
+    private static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -51,7 +51,7 @@ public class HttpRequestParser {
         return httpRequest;
     }
 
-    private InputStream getRemainingRequestInputStream(InputStream inputStream, int contentLength) throws IOException {
+    InputStream getRemainingRequestInputStream(InputStream inputStream, int contentLength) throws IOException {
         ByteBuffer byteBuffer;
         if (contentLength == -1) {
             byteBuffer = ByteBuffer.allocate(0);
@@ -66,7 +66,7 @@ public class HttpRequestParser {
 
     }
 
-    private void addHeader(String headerLine, HttpRequest httpRequest) {
+    void addHeader(String headerLine, HttpRequest httpRequest) {
         String[] headerNameValue = headerLine.split(":");
         Map<HttpHeaderName, String> headerMap = httpRequest.getHeaderMap();
         String headerName = headerNameValue[0].trim();
@@ -114,7 +114,7 @@ public class HttpRequestParser {
         httpRequest.setCookies(cookiesList);
     }
 
-    private void setRequestLineToHttpRequest(String requestFirstLine, HttpRequest httpRequest) {
+    void setRequestLineToHttpRequest(String requestFirstLine, HttpRequest httpRequest) {
         log.info("Processing request line '{}'", requestFirstLine);
         String[] strings = requestFirstLine.split("\\s");
         httpRequest.setMethod(HttpMethod.getMethodByName(strings[0].trim()));

@@ -3,6 +3,9 @@ package com.dzytsiuk.webserver.context
 import com.dzytsiuk.webserver.app.entity.WebAppServlet
 import org.junit.Test
 import org.mockito.Mockito
+
+import java.nio.file.Paths
+
 import static org.junit.Assert.*
 
 class AppServletContextTest {
@@ -90,5 +93,24 @@ class AppServletContextTest {
 
         def actualServlet = servletContext.getWebAppServletByUrlPattern("/invalid")
         assertNull(actualServlet)
+    }
+
+    @Test
+    void getResourcePaths() {
+        def urls = [Paths.get("/testclasses/TestServlet.cl").toUri().toURL()] as URL[]
+        def servletContext = new AppServletContext(new URLClassLoader(urls))
+        servletContext.setContextPath("testclasses")
+        def paths = servletContext.getResourcePaths("/")
+        assertTrue(paths.contains("TestServlet.cl"))
+    }
+
+    @Test
+    void getRealPath() {
+        def urls = [Paths.get("/testclasses/TestServlet.cl").toUri().toURL()] as URL[]
+        def expectedPath = "file:/testclasses/TestServlet.cl"
+        def servletContext = new AppServletContext(new URLClassLoader(urls))
+        assertEquals(expectedPath, servletContext.getRealPath(/testclasses/))
+
+
     }
 }

@@ -23,16 +23,6 @@ public class WebAppServletHandler extends DefaultHandler {
     }
 
     @Override
-    public void startDocument() throws SAXException {
-        super.startDocument();
-    }
-
-    @Override
-    public void endDocument() throws SAXException {
-        super.endDocument();
-    }
-
-    @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (qName.equals("servlet")) {
             currentWebAppServlet = new WebAppServlet();

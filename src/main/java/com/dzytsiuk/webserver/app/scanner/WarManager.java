@@ -61,7 +61,7 @@ public class WarManager {
         appServletContext.setWebAppServlets(webAppServlets);
 
         //create app
-        String appName = warFolder.split("/")[1];
+        String appName = warFolder.split(File.separator)[1];
         log.info("Application {} is created", appName);
         appServletContext.setContextPath(appName);
         return new Application(appName, appServletContext);

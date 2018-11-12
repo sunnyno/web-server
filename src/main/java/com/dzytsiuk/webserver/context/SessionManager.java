@@ -34,6 +34,7 @@ public class SessionManager {
         for (Map.Entry<String, HttpSession> sessionEntry : httpSessionMap.entrySet()) {
             HttpSession session = sessionEntry.getValue();
             if (isInvalid(session)) {
+                log.info("Session {} has expired", session.getId());
                 expiredSessions.add(session.getId());
                 session.invalidate();
             }
@@ -42,11 +43,7 @@ public class SessionManager {
     }
 
     private boolean isInvalid(HttpSession session) {
-        boolean isInvalid = System.currentTimeMillis() - session.getLastAccessedTime() > session.getMaxInactiveInterval() * MILLISECONDS_IN_MINUTE;
-        if (isInvalid) {
-            log.info("Session {} has expired", session.getId());
-        }
-        return isInvalid;
+        return System.currentTimeMillis() - session.getLastAccessedTime() > session.getMaxInactiveInterval() * MILLISECONDS_IN_MINUTE;
     }
 
     public HttpSession getSession(String sessionId, boolean create) {

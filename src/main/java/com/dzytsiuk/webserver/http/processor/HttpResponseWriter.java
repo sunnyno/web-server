@@ -17,13 +17,14 @@ public class HttpResponseWriter {
     private boolean isHeaderWritten = false;
     private boolean isChunked = false;
 
-    public boolean isHeaderWritten() {
-        return isHeaderWritten;
-    }
 
     public HttpResponseWriter(HttpResponse httpResponse) {
         this.httpResponse = httpResponse;
         this.outputStream = httpResponse.getSocketOutputStream();
+    }
+
+    public boolean isHeaderWritten() {
+        return isHeaderWritten;
     }
 
     public void writeResponse(byte[] array) throws IOException {
@@ -40,43 +41,6 @@ public class HttpResponseWriter {
         if (isChunked) {
             outputStream.write(CRLF.getBytes());
         }
-    }
-
-    private void writeHeader() throws IOException {
-        HttpVersion httpVersion = httpResponse.getHttpVersion();
-        outputStream.write((httpVersion.getName() + " ").getBytes());
-        HttpStatus status = httpResponse.getStatus();
-        outputStream.write(status.getCode().getBytes());
-        String message = status.getMessage();
-        if (message != null) {
-            outputStream.write((" " + message).getBytes());
-        }
-        outputStream.write(CRLF.getBytes());
-        if (isChunked) {
-            outputStream.write((HttpHeaderName.TRANSFER_ENCODING_CHUNKED.getHeaderName() + CRLF).getBytes());
-        } else {
-            outputStream.write((HttpHeaderName.CONTENT_LENGTH.getHeaderName() + NAME_VALUE_SEPARATOR + (httpResponse.getContentLength()) + CRLF).getBytes());
-        }
-        for (HttpHeader httpHeader : httpResponse.getHeaders()) {
-            outputStream.write((httpHeader.getName() + NAME_VALUE_SEPARATOR + (httpHeader.getValue() + CRLF)).getBytes());
-        }
-
-        writeCookies();
-        outputStream.write(CRLF.getBytes());
-        isHeaderWritten = true;
-    }
-
-    private void writeCookies() throws IOException {
-        List<Cookie> cookies = httpResponse.getCookies();
-        if (cookies == null) {
-            return;
-        }
-        StringBuilder cookieHeader = new StringBuilder(HttpHeaderName.COOKIE.getHeaderName() + ": ");
-        for (Cookie cookie : cookies) {
-            cookieHeader.append(cookie.getName()).append("=").append(cookie.getValue()).append("; ");
-        }
-        cookieHeader.append(CRLF);
-        outputStream.write(cookieHeader.toString().getBytes());
     }
 
     public void writeLastChunk() throws IOException {
@@ -110,6 +74,46 @@ public class HttpResponseWriter {
             writeHeader();
         }
         writeResponse(message.getBytes());
+    }
+
+    void writeHeader() throws IOException {
+        HttpVersion httpVersion = httpResponse.getHttpVersion();
+        outputStream.write((httpVersion.getName() + " ").getBytes());
+        HttpStatus status = httpResponse.getStatus();
+        outputStream.write(status.getCode().getBytes());
+        String message = status.getMessage();
+        if (message != null) {
+            outputStream.write((" " + message).getBytes());
+        }
+        outputStream.write(CRLF.getBytes());
+        if (isChunked) {
+            outputStream.write((HttpHeaderName.TRANSFER_ENCODING_CHUNKED.getHeaderName() + CRLF).getBytes());
+        } else {
+            outputStream.write((HttpHeaderName.CONTENT_LENGTH.getHeaderName() + NAME_VALUE_SEPARATOR + (httpResponse.getContentLength()) + CRLF).getBytes());
+        }
+        for (HttpHeader httpHeader : httpResponse.getHeaders()) {
+            outputStream.write((httpHeader.getName() + NAME_VALUE_SEPARATOR + (httpHeader.getValue() + CRLF)).getBytes());
+        }
+
+        String cookieString = getCookieString();
+        if (cookieString != null) {
+            outputStream.write(cookieString.getBytes());
+        }
+        outputStream.write(CRLF.getBytes());
+        isHeaderWritten = true;
+    }
+
+    String getCookieString() throws IOException {
+        List<Cookie> cookies = httpResponse.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        StringBuilder cookieHeader = new StringBuilder(HttpHeaderName.COOKIE.getHeaderName() + ": ");
+        for (Cookie cookie : cookies) {
+            cookieHeader.append(cookie.getName()).append("=").append(cookie.getValue()).append("; ");
+        }
+        cookieHeader.append(CRLF);
+        return cookieHeader.toString();
     }
 }
 

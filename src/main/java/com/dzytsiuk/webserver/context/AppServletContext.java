@@ -297,7 +297,7 @@ public class AppServletContext implements ServletContext {
             Pattern pattern = Pattern.compile("(?<=" + contextPath + "\\/)[\\w+.-]*");
             Matcher matcher = pattern.matcher(urlString);
             if (matcher.find()) {
-                String contextPathUrl = matcher.group(1);
+                String contextPathUrl = matcher.group(0);
                 contextPathUrlList.add(contextPathUrl);
             }
         }
