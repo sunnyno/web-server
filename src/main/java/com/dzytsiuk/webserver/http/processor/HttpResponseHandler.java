@@ -17,6 +17,7 @@ public class HttpResponseHandler {
 
     HttpResponse createDefaultResponse(HttpRequest httpRequest, OutputStream outputStream) throws IOException {
         HttpResponse httpResponse = new HttpResponse();
+        httpResponse.setHttpRequest(httpRequest);
         httpResponse.setSocketOutputStream(outputStream);
         httpResponse.setHttpVersion(httpRequest.getHttpVersion());
         httpResponse.setCookies(httpRequest.getCookiesList());

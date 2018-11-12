@@ -18,10 +18,12 @@ public class Application {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final String name;
     private final AppServletContext appServletContext;
+    private SessionManager sessionManager;
 
     public Application(String name, AppServletContext appServletContext) {
         this.name = name;
         this.appServletContext = appServletContext;
+        sessionManager = new SessionManager(appServletContext);
     }
 
     public String getName() {
@@ -35,6 +37,7 @@ public class Application {
     public void process(HttpRequest httpRequest, HttpResponse httpResponse) throws ServletException, IOException {
         try (PrintWriter writer = httpResponse.getWriter();
              BufferedReader reader = httpRequest.getReader()) {
+            httpRequest.setSessionManager(sessionManager);
             HttpServlet httpServlet = appServletContext.getHttpServletByUrlPattern(httpRequest.getRequestURI());
             ResponseStream responseOutputStream = (ResponseStream) httpResponse.getOutputStream();
             if (httpServlet == null) {

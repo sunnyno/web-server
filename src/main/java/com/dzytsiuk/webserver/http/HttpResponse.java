@@ -7,11 +7,13 @@ import com.dzytsiuk.webserver.http.io.ResponseStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
 public class HttpResponse implements HttpServletResponse {
+    private static final String SESSION_ID_QUERY_PARAM = "sessionId=";
     private static final StandardHttpStatus DEFAULT_STATUS = StandardHttpStatus.OK;
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     private ResponseStream outputStream;
@@ -24,6 +26,7 @@ public class HttpResponse implements HttpServletResponse {
     private List<HttpHeader> headers = new ArrayList<>();
     private Locale locale = Locale.getDefault();
     private PrintWriter printWriter;
+    private HttpRequest httpRequest;
 
     @Override
     public void addCookie(Cookie cookie) {
@@ -41,12 +44,21 @@ public class HttpResponse implements HttpServletResponse {
 
     @Override
     public String encodeURL(String url) {
+        if (httpRequest.isRequestedSessionIdFromURL()) {
+            HttpSession session = httpRequest.getSession();
+            if (url.contains("?")) {
+                url += "&";
+            } else {
+                url += "?";
+            }
+            url += SESSION_ID_QUERY_PARAM + session.getId();
+        }
         return url;
     }
 
     @Override
     public String encodeRedirectURL(String url) {
-        return url;
+        return encodeURL(url);
     }
 
     @Override
@@ -286,5 +298,9 @@ public class HttpResponse implements HttpServletResponse {
 
     public HttpVersion getHttpVersion() {
         return httpVersion;
+    }
+
+    public void setHttpRequest(HttpRequest httpRequest) {
+        this.httpRequest = httpRequest;
     }
 }

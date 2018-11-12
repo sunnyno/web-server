@@ -1,5 +1,6 @@
 package com.dzytsiuk.webserver.http;
 
+import com.dzytsiuk.webserver.context.SessionManager;
 import com.dzytsiuk.webserver.http.entity.HttpHeaderName;
 import com.dzytsiuk.webserver.http.entity.HttpMethod;
 import com.dzytsiuk.webserver.http.entity.HttpVersion;
@@ -20,6 +21,7 @@ import java.util.*;
 public class HttpRequest implements HttpServletRequest {
     private static final Locale DEFAULT_LOCALE = Locale.getDefault();
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    private SessionManager sessionManager;
     private HttpMethod method;
     private String queryString;
     private String requestUri;
@@ -41,6 +43,9 @@ public class HttpRequest implements HttpServletRequest {
     private Map<Double, Locale> locales = new HashMap<>();
     private String serverAddress;
     private int localPort;
+    private String sessionId;
+    private boolean isSessionIdFromUrl = false;
+    private boolean isSessionIdFromCookie = false;
 
     @Override
     public String getAuthType() {
@@ -141,7 +146,7 @@ public class HttpRequest implements HttpServletRequest {
 
     @Override
     public String getRequestedSessionId() {
-        return null;
+        return sessionId;
     }
 
     @Override
@@ -164,32 +169,32 @@ public class HttpRequest implements HttpServletRequest {
 
     @Override
     public HttpSession getSession(boolean create) {
-        return null;
+        return sessionManager.getSession(sessionId, create);
     }
 
     @Override
     public HttpSession getSession() {
-        return null;
+        return getSession(false);
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        return false;
+        return getSession() != null;
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return false;
+        return isSessionIdFromCookie;
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return false;
+        return isSessionIdFromUrl;
     }
 
     @Override
     public boolean isRequestedSessionIdFromUrl() {
-        return false;
+        return isRequestedSessionIdFromURL();
     }
 
     @Override
@@ -459,4 +464,21 @@ public class HttpRequest implements HttpServletRequest {
         return locales;
     }
 
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public void setSessionIdFromUrl(boolean sessionIdFromUrl) {
+        isSessionIdFromUrl = sessionIdFromUrl;
+    }
+
+    public void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+        getSession(true);
+    }
+
+    public void setSessionIdFromCookie(boolean sessionIdFromCookie) {
+        isSessionIdFromUrl = false;
+        isSessionIdFromCookie = sessionIdFromCookie;
+    }
 }

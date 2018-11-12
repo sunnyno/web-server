@@ -41,7 +41,7 @@ public class HttpProcessor implements Runnable {
             }
             log.info("Client {} disconnected", inetAddress);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new HttpException("Error processing request ", e);
         }
     }
 

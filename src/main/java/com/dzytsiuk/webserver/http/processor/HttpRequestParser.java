@@ -25,6 +25,8 @@ public class HttpRequestParser {
     private static final String REGEXP_QUERY_STRING = "(?<=\\?).+";
     private static final String REGEXP_APP_NAME = "\\/(.*?)[\\/\\?]";
     private static final String REGEXP_URI = "(?:.*?\\/){2}(.+(?=\\?)|.+)";
+    private static final String REGEXP_SESSION_ID="[j]?sessionId=(.+(?=\\&)|.+)";
+    public static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -72,8 +74,7 @@ public class HttpRequestParser {
         HttpHeaderName httpHeaderName = HttpHeaderName.getHeaderByHeaderName(headerName);
         if (httpHeaderName != null) {
             if (httpHeaderName == HttpHeaderName.COOKIE) {
-                List<Cookie> cookies = getCookieList(headerValue);
-                httpRequest.setCookies(cookies);
+                setCookieList(httpRequest, headerValue);
             } else {
                 headerMap.put(httpHeaderName, headerValue);
             }
@@ -97,14 +98,20 @@ public class HttpRequestParser {
         }
     }
 
-    private List<Cookie> getCookieList(String headerValue) {
+    private void setCookieList(HttpRequest httpRequest, String headerValue) {
         List<Cookie> cookiesList = new ArrayList<>();
         String[] cookies = headerValue.split(";\\s");
         for (String cookie : cookies) {
             String[] cookieNameValue = cookie.split("=");
-            cookiesList.add(new Cookie(cookieNameValue[0].trim(), cookieNameValue[1].trim()));
+            String name = cookieNameValue[0].trim();
+            String value = cookieNameValue[1].trim();
+            if(name.equalsIgnoreCase(JSESSIONID_COOKIE_NAME)){
+                httpRequest.setSessionId(value);
+                httpRequest.setSessionIdFromCookie(true);
+            }
+            cookiesList.add(new Cookie(name, value));
         }
-        return cookiesList;
+        httpRequest.setCookies(cookiesList);
     }
 
     private void setRequestLineToHttpRequest(String requestFirstLine, HttpRequest httpRequest) {
@@ -121,6 +128,11 @@ public class HttpRequestParser {
         httpRequest.setRequestUri("/" + uri);
 
         String queryString = getMatchedString(REGEXP_QUERY_STRING, url, 0);
+        if(queryString!= null ){
+            String matchedString = getMatchedString(REGEXP_SESSION_ID, queryString, 1);
+            httpRequest.setSessionId(matchedString);
+            httpRequest.setSessionIdFromUrl(true);
+        }
         httpRequest.setQueryString(queryString);
 
         httpRequest.setHttpVersion(HttpVersion.getVersionByName(strings[2].trim()));

@@ -42,6 +42,9 @@ public class ResponseStream extends ServletOutputStream {
 
     @Override
     public void flush() throws IOException {
+        if (byteBuffer == null) {
+            byteBuffer = ByteBuffer.allocate(bufferCapacity);
+        }
         byte[] a = new byte[byteBuffer.position()];
         byteBuffer.rewind();
         byteBuffer.get(a);
