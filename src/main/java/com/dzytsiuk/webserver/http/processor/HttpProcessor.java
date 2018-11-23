@@ -7,27 +7,27 @@ import com.dzytsiuk.webserver.http.HttpRequest;
 import com.dzytsiuk.webserver.http.HttpResponse;
 import com.dzytsiuk.webserver.http.entity.StandardHttpStatus;
 import com.dzytsiuk.webserver.http.io.ResponseStream;
+import com.dzytsiuk.webserver.util.AppUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import javax.servlet.ServletException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 
-public class HttpProcessor implements Runnable {
+public class HttpProcessor implements Runnable, Closeable {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    @Value("${server.port}")
-    private int localPort;
+    private int localPort = Integer.parseInt(AppUtil.getApplicationProperty("server.port"));
     private Socket socket;
 
-    private HttpRequestParser httpRequestParser;
-    private ApplicationContainer container;
-    private HttpResponseHandler httpResponseHandler;
+    private HttpRequestParser httpRequestParser = new HttpRequestParser();
+    private ApplicationContainer container = ApplicationContainer.getInstance();
+    private HttpResponseHandler httpResponseHandler = new HttpResponseHandler();
+
+    public HttpProcessor(Socket socket) {
+        this.socket = socket;
+    }
 
     public void run() {
         try {
@@ -45,7 +45,7 @@ public class HttpProcessor implements Runnable {
         }
     }
 
-    private void process(InputStream inputStream) throws IOException, ServletException {
+    private void process(InputStream inputStream) throws IOException {
         OutputStream outputStream = socket.getOutputStream();
         log.info("Extracting http request");
         HttpRequest httpRequest = httpRequestParser.getHttpRequest(inputStream);
@@ -63,7 +63,10 @@ public class HttpProcessor implements Runnable {
             ((ResponseStream) httpResponse.getOutputStream()).writeException(httpException);
         } else {
             log.info("Sending request to application {}", application.getName());
-            application.process(httpRequest, httpResponse);
+            try (PrintWriter writer = httpResponse.getWriter();
+                 BufferedReader reader = httpRequest.getReader()) {
+                application.process(httpRequest, httpResponse);
+            }
         }
     }
 
@@ -75,23 +78,11 @@ public class HttpProcessor implements Runnable {
         httpRequest.setLocalPort(localPort);
     }
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
+    public void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error closing socket.", e);
+        }
     }
-
-    @Autowired
-    public void setHttpRequestParser(HttpRequestParser httpRequestParser) {
-        this.httpRequestParser = httpRequestParser;
-    }
-
-    @Autowired
-    public void setContainer(ApplicationContainer container) {
-        this.container = container;
-    }
-
-    @Autowired
-    public void setHttpResponseHandler(HttpResponseHandler httpResponseHandler) {
-        this.httpResponseHandler = httpResponseHandler;
-    }
-
 }

@@ -140,6 +140,26 @@ public class HttpResponse implements HttpServletResponse {
     }
 
     @Override
+    public int getStatus() {
+        return 0;
+    }
+
+    @Override
+    public String getHeader(String name) {
+        return null;
+    }
+
+    @Override
+    public Collection<String> getHeaders(String name) {
+        return null;
+    }
+
+    @Override
+    public Collection<String> getHeaderNames() {
+        return null;
+    }
+
+    @Override
     public String getCharacterEncoding() {
         if (characterEncoding == null) {
             return DEFAULT_CHARSET.name();
@@ -177,6 +197,11 @@ public class HttpResponse implements HttpServletResponse {
     @Override
     public void setContentLength(int len) {
         this.contentLength = len;
+    }
+
+    @Override
+    public void setContentLengthLong(long len) {
+
     }
 
     @Override
@@ -292,7 +317,7 @@ public class HttpResponse implements HttpServletResponse {
         this.outputStream = outputStream;
     }
 
-    public HttpStatus getStatus() {
+    public HttpStatus getHttpStatus() {
         return status;
     }
 

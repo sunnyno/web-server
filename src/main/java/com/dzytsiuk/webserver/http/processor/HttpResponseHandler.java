@@ -5,14 +5,10 @@ import com.dzytsiuk.webserver.http.HttpRequest;
 import com.dzytsiuk.webserver.http.HttpResponse;
 import com.dzytsiuk.webserver.http.entity.StandardHttpStatus;
 import com.dzytsiuk.webserver.http.io.ResponseStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-@Component
 public class HttpResponseHandler {
 
     HttpResponse createDefaultResponse(HttpRequest httpRequest, OutputStream outputStream) throws IOException {

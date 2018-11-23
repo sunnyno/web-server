@@ -1,9 +1,9 @@
 package com.dzytsiuk.webserver.app.parser;
 
+import com.dzytsiuk.webserver.app.ApplicationBuilder;
 import com.dzytsiuk.webserver.app.entity.WebAppServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -13,16 +13,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-@Component
 public class WebXmlParser {
     private static final SAXParserFactory SAX_PARSER_FACTORY = SAXParserFactory.newInstance();
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private ApplicationBuilder applicationBuilder = new ApplicationBuilder();
 
 
-    public List<WebAppServlet> getServletsFromWebXml(Path file) {
+    public void createServletsFromWebXml(Path file, String warFolder) {
         log.info("Start parsing web.xml");
         Map<String, WebAppServlet> webAppServletMap = new HashMap<>();
         WebAppServletHandler webAppServletHandler = new WebAppServletHandler(webAppServletMap);
@@ -34,6 +33,10 @@ public class WebXmlParser {
         }
         ArrayList<WebAppServlet> webAppServlets = new ArrayList<>(webAppServletMap.values());
         log.debug("Found servlets: {}", webAppServlets);
-        return webAppServlets;
+        applicationBuilder.buildApp(webAppServlets, warFolder);
+    }
+
+    void setApplicationBuilder(ApplicationBuilder applicationBuilder) {
+        this.applicationBuilder = applicationBuilder;
     }
 }

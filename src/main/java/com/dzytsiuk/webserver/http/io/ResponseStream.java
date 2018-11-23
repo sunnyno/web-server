@@ -3,6 +3,7 @@ package com.dzytsiuk.webserver.http.io;
 import com.dzytsiuk.webserver.http.processor.HttpResponseWriter;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -70,5 +71,15 @@ public class ResponseStream extends ServletOutputStream {
 
     public void reset() {
         byteBuffer.clear();
+    }
+
+    @Override
+    public boolean isReady() {
+        return false;
+    }
+
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
+
     }
 }

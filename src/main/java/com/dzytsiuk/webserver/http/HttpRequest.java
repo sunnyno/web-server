@@ -6,11 +6,8 @@ import com.dzytsiuk.webserver.http.entity.HttpMethod;
 import com.dzytsiuk.webserver.http.entity.HttpVersion;
 import com.dzytsiuk.webserver.http.io.RequestStream;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import javax.servlet.*;
+import javax.servlet.http.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.security.Principal;
@@ -80,15 +77,15 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
-    public Enumeration getHeaders(String name) {
+    public Enumeration<String> getHeaders(String name) {
         ArrayList<String> headerValue = new ArrayList<>();
         headerValue.add(getHeader(name));
         return Collections.enumeration(headerValue);
     }
 
     @Override
-    public Enumeration getHeaderNames() {
-        return Collections.enumeration(headerMap.keySet());
+    public Enumeration<String> getHeaderNames() {
+        return null;//Collections.<String>enumeration(headerMap.keySet());
     }
 
     @Override
@@ -178,6 +175,11 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
+    public String changeSessionId() {
+        return null;
+    }
+
+    @Override
     public boolean isRequestedSessionIdValid() {
         return getSession() != null;
     }
@@ -198,12 +200,42 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
+    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
+        return false;
+    }
+
+    @Override
+    public void login(String username, String password) throws ServletException {
+
+    }
+
+    @Override
+    public void logout() throws ServletException {
+
+    }
+
+    @Override
+    public Collection<Part> getParts() throws IOException, ServletException {
+        return null;
+    }
+
+    @Override
+    public Part getPart(String name) throws IOException, ServletException {
+        return null;
+    }
+
+    @Override
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
+        return null;
+    }
+
+    @Override
     public Object getAttribute(String name) {
         return attributes.get(name);
     }
 
     @Override
-    public Enumeration getAttributeNames() {
+    public Enumeration<String> getAttributeNames() {
         return Collections.enumeration(attributes.keySet());
     }
 
@@ -223,6 +255,11 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
+    public long getContentLengthLong() {
+        return 0;
+    }
+
+    @Override
     public String getContentType() {
         return getHeader(HttpHeaderName.CONTENT_TYPE.getHeaderName());
     }
@@ -238,7 +275,7 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
-    public Enumeration getParameterNames() {
+    public Enumeration<String> getParameterNames() {
         return Collections.enumeration(parameters.keySet());
     }
 
@@ -248,8 +285,8 @@ public class HttpRequest implements HttpServletRequest {
     }
 
     @Override
-    public Map getParameterMap() {
-        return parameters;
+    public Map<String, String[]> getParameterMap() {
+        return null;// parameters;
     }
 
     @Override
@@ -362,6 +399,41 @@ public class HttpRequest implements HttpServletRequest {
     @Override
     public int getLocalPort() {
         return localPort;
+    }
+
+    @Override
+    public ServletContext getServletContext() {
+        return null;
+    }
+
+    @Override
+    public AsyncContext startAsync() throws IllegalStateException {
+        return null;
+    }
+
+    @Override
+    public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
+        return null;
+    }
+
+    @Override
+    public boolean isAsyncStarted() {
+        return false;
+    }
+
+    @Override
+    public boolean isAsyncSupported() {
+        return false;
+    }
+
+    @Override
+    public AsyncContext getAsyncContext() {
+        return null;
+    }
+
+    @Override
+    public DispatcherType getDispatcherType() {
+        return null;
     }
 
     public void setInputStream(RequestStream inputStream) {

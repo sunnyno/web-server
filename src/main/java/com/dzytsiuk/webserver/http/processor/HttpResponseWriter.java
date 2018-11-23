@@ -79,7 +79,7 @@ public class HttpResponseWriter {
     void writeHeader() throws IOException {
         HttpVersion httpVersion = httpResponse.getHttpVersion();
         outputStream.write((httpVersion.getName() + " ").getBytes());
-        HttpStatus status = httpResponse.getStatus();
+        HttpStatus status = httpResponse.getHttpStatus();
         outputStream.write(status.getCode().getBytes());
         String message = status.getMessage();
         if (message != null) {

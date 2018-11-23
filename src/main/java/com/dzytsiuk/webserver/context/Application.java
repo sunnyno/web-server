@@ -34,27 +34,22 @@ public class Application {
         return appServletContext;
     }
 
-    public void process(HttpRequest httpRequest, HttpResponse httpResponse) throws ServletException, IOException {
-        try (PrintWriter writer = httpResponse.getWriter();
-             BufferedReader reader = httpRequest.getReader()) {
-            httpRequest.setSessionManager(sessionManager);
-            HttpServlet httpServlet = appServletContext.getHttpServletByUrlPattern(httpRequest.getRequestURI());
-            ResponseStream responseOutputStream = (ResponseStream) httpResponse.getOutputStream();
-            if (httpServlet == null) {
-                httpResponse.setStatus(StandardHttpStatus.NOT_FOUND.getCode());
-                HttpException httpException = new HttpException("URL " + httpRequest.getRequestURI() + " is not mapped");
-                responseOutputStream.writeException(httpException);
-            } else {
-                log.info("Passing request to servlet {}", httpServlet);
-                httpRequest.setServletPath(appServletContext.getHttpServletPath(httpServlet));
-                try {
-                    httpServlet.init();
-                    httpServlet.service(httpRequest, httpResponse);
-                    httpServlet.destroy();
-                } catch (Throwable e) {
-                    httpResponse.setStatus(StandardHttpStatus.INTERNAL_SERVER_ERROR.getCode());
-                    responseOutputStream.writeException(e);
-                }
+    public void process(HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
+        httpRequest.setSessionManager(sessionManager);
+        HttpServlet httpServlet = appServletContext.getHttpServletByUrlPattern(httpRequest.getRequestURI());
+        ResponseStream responseOutputStream = (ResponseStream) httpResponse.getOutputStream();
+        if (httpServlet == null) {
+            httpResponse.setStatus(StandardHttpStatus.NOT_FOUND.getCode());
+            HttpException httpException = new HttpException("URL " + httpRequest.getRequestURI() + " is not mapped");
+            responseOutputStream.writeException(httpException);
+        } else {
+            log.info("Passing request to servlet {}", httpServlet);
+            httpRequest.setServletPath(appServletContext.getHttpServletPath(httpServlet));
+            try {
+                httpServlet.service(httpRequest, httpResponse);
+            } catch (Throwable e) {
+                httpResponse.setStatus(StandardHttpStatus.INTERNAL_SERVER_ERROR.getCode());
+                responseOutputStream.writeException(e);
             }
         }
     }

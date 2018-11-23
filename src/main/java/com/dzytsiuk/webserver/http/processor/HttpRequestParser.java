@@ -8,7 +8,6 @@ import com.dzytsiuk.webserver.http.io.RequestStream;
 import com.dzytsiuk.webserver.http.io.HttpInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import javax.servlet.http.Cookie;
 import java.io.*;
@@ -20,7 +19,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
 public class HttpRequestParser {
     private static final String REGEXP_QUERY_STRING = "(?<=\\?).+";
     private static final String REGEXP_APP_NAME = "\\/(.*?)[\\/\\?]";
@@ -63,7 +61,6 @@ public class HttpRequestParser {
         }
         byteBuffer.flip();
         return new ByteArrayInputStream(byteBuffer.array());
-
     }
 
     void addHeader(String headerLine, HttpRequest httpRequest) {

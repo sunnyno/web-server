@@ -1,71 +1,82 @@
 package com.dzytsiuk.webserver.app.scanner;
 
-import com.dzytsiuk.webserver.context.Application;
-import com.dzytsiuk.webserver.context.ApplicationContainer;
 import com.dzytsiuk.webserver.exception.AppInstantiationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.nio.file.*;
 import java.util.zip.ZipFile;
 
-@Component
 public class WebAppScanner {
-    private static final File WEB_APP_FOLDER = new File("webapps");
-    private static final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private static final String WEB_APP_FOLDER_NAME = "webapps";
+    private static final String WAR_EXTENSION = ".war";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final WarManager warManager;
-    private final ApplicationContainer applicationContainer;
-    private final Map<String, Long> scannedWarsLastModifiedMap = new HashMap<>();
+    private final WarManager warManager = new WarManager();
 
-    @Value("${scan.webapps.rate}")
-    private long scanRate;
+    public void scan() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                WatchService watchService = FileSystems.getDefault().newWatchService();
+                Paths.get(WEB_APP_FOLDER_NAME).register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
 
-    @Autowired
-    public WebAppScanner(ApplicationContainer applicationContainer, WarManager warManager) {
-        this.applicationContainer = applicationContainer;
-        this.warManager = warManager;
+                WatchKey watchKey;
+                try {
+                    watchKey = watchService.take();
+                    log.debug("New file loaded to {} folder", WEB_APP_FOLDER_NAME);
+                    processEntryCreateEvent(watchKey);
+                } catch (InterruptedException e) {
+                    watchService.close();
+                    log.info("Web app scanner is shut down");
+                    break;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error occurred during " + WEB_APP_FOLDER_NAME + " scanning", e);
+            }
+        }
+    }
+    @SuppressWarnings("unchecked")
+    private void processEntryCreateEvent(WatchKey watchKey) {
+        for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
+            WatchEvent.Kind<?> kind = watchEvent.kind();
+            if (kind == StandardWatchEventKinds.OVERFLOW) {
+                continue;
+            }
+            WatchEvent<Path> ev = (WatchEvent<Path>) watchEvent;
+            String filename = ev.context().toString();
+            if (filename.endsWith(WAR_EXTENSION)) {
+                log.debug("Start constructing app from file {}", filename);
+                File file = new File(WEB_APP_FOLDER_NAME + File.separator + filename);
+                handleWar(file);
+                log.debug("Finish constructing app from file {}", filename);
+            }
+            if (!watchKey.reset()) {
+                break;
+            }
+
+        }
     }
 
-    @PostConstruct
-    public void init() {
-        scheduledExecutorService.scheduleAtFixedRate(this::scanWebAppFolder, 0, scanRate, TimeUnit.MINUTES);
-    }
-
-    private void scanWebAppFolder() {
+    public void initialScan() {
         log.debug("Start scanning webapps for new war files");
-        File[] files = WEB_APP_FOLDER.listFiles((dir, name) -> name.endsWith(".war"));
+        File webAppFolder = new File(WEB_APP_FOLDER_NAME);
+        File[] files = webAppFolder.listFiles((dir, name) -> name.endsWith(WAR_EXTENSION));
         if (files != null) {
             for (File file : files) {
-                String fileName = file.getName();
-                Long lastModified = scannedWarsLastModifiedMap.get(fileName);
-                long currentFileLasModified = file.lastModified();
-                log.debug("File {}. Saved last modified: {}. Current last modified: {}", fileName, lastModified, currentFileLasModified);
-                if (lastModified == null || lastModified < currentFileLasModified) {
-                    log.info("New war file found {}", fileName);
-                    try (ZipFile zipFile = new ZipFile(file)) {
-                        Application app = warManager.createApp(zipFile);
-                        applicationContainer.registerApp(app);
-                        app.getAppServletContext().loadServletsOnStartUp();
-                    } catch (Exception e) {
-                        throw new AppInstantiationException("Error instantiating application from file " + fileName, e);
-                    }
-                    scannedWarsLastModifiedMap.put(fileName, currentFileLasModified);
-                }
+                handleWar(file);
             }
         }
         log.debug("Finish scanning webapps for new war files");
     }
 
-
+    private void handleWar(File file) {
+        String fileName = file.getName();
+        log.info("New war file found {}", fileName);
+        try (ZipFile zipFile = new ZipFile(file)) {
+            warManager.process(zipFile);
+        } catch (Exception e) {
+            throw new AppInstantiationException("Error instantiating application from file " + fileName, e);
+        }
+    }
 }

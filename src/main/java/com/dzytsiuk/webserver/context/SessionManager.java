@@ -1,6 +1,8 @@
 package com.dzytsiuk.webserver.context;
 
+import com.dzytsiuk.webserver.context.executor.DaemonThreadFactory;
 import com.dzytsiuk.webserver.http.Session;
+import com.dzytsiuk.webserver.util.AppUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,15 +11,12 @@ import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class SessionManager {
-    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor();
-    private static final int SESSION_CHECK_RATE = 1;
-    private static final int SESSION_CHECK_DELAY_RATE = 1;
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
+    private static final int SESSION_CHECK_RATE = Integer.parseInt(AppUtil.getApplicationProperty("session.check.rate"));
+    private static final int SESSION_CHECK_DELAY_RATE = Integer.parseInt(AppUtil.getApplicationProperty("session.check.rate"));
     private static final int MILLISECONDS_IN_MINUTE = 60000;
     private final Logger log = LoggerFactory.getLogger(getClass());
     private Map<String, HttpSession> httpSessionMap = new ConcurrentHashMap<>();
@@ -62,6 +61,4 @@ public class SessionManager {
         }
         return foundSession;
     }
-
-
 }
