@@ -1,6 +1,6 @@
 package com.dzytsiuk.webserver.http.processor
 
-import com.dzytsiuk.webserver.http.HttpRequest
+import com.dzytsiuk.webserver.http.entity.HttpRequest
 import com.dzytsiuk.webserver.http.entity.HttpHeaderName
 import com.dzytsiuk.webserver.http.entity.HttpVersion
 import org.junit.Test

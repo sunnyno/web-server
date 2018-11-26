@@ -1,18 +1,18 @@
 package com.dzytsiuk.webserver.context;
 
 import com.dzytsiuk.webserver.exception.HttpException;
-import com.dzytsiuk.webserver.http.HttpRequest;
-import com.dzytsiuk.webserver.http.HttpResponse;
+import com.dzytsiuk.webserver.http.entity.HttpRequest;
+import com.dzytsiuk.webserver.http.entity.HttpResponse;
 import com.dzytsiuk.webserver.http.entity.StandardHttpStatus;
 import com.dzytsiuk.webserver.http.io.ResponseStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServlet;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.List;
 
 public class Application {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -35,19 +35,24 @@ public class Application {
     }
 
     public void process(HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
+        Thread.currentThread().setContextClassLoader(appServletContext.getClassLoader());
         httpRequest.setSessionManager(sessionManager);
-        HttpServlet httpServlet = appServletContext.getHttpServletByUrlPattern(httpRequest.getRequestURI());
+        String requestURI = httpRequest.getRequestURI();
+        HttpServlet httpServlet = appServletContext.getHttpServletByUrlPattern(requestURI);
+        FilterChain filters = appServletContext.getFilterChainByUrlPattern(requestURI);
         ResponseStream responseOutputStream = (ResponseStream) httpResponse.getOutputStream();
         if (httpServlet == null) {
             httpResponse.setStatus(StandardHttpStatus.NOT_FOUND.getCode());
-            HttpException httpException = new HttpException("URL " + httpRequest.getRequestURI() + " is not mapped");
+            HttpException httpException = new HttpException("URL " + requestURI + " is not mapped");
             responseOutputStream.writeException(httpException);
         } else {
             log.info("Passing request to servlet {}", httpServlet);
             httpRequest.setServletPath(appServletContext.getHttpServletPath(httpServlet));
             try {
+                filters.doFilter(httpRequest, httpResponse);
                 httpServlet.service(httpRequest, httpResponse);
             } catch (Throwable e) {
+                log.error("Error processing request", e);
                 httpResponse.setStatus(StandardHttpStatus.INTERNAL_SERVER_ERROR.getCode());
                 responseOutputStream.writeException(e);
             }

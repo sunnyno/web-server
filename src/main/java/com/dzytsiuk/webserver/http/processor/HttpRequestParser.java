@@ -1,6 +1,6 @@
 package com.dzytsiuk.webserver.http.processor;
 
-import com.dzytsiuk.webserver.http.HttpRequest;
+import com.dzytsiuk.webserver.http.entity.HttpRequest;
 import com.dzytsiuk.webserver.http.entity.HttpHeaderName;
 import com.dzytsiuk.webserver.http.entity.HttpMethod;
 import com.dzytsiuk.webserver.http.entity.HttpVersion;
@@ -23,8 +23,9 @@ public class HttpRequestParser {
     private static final String REGEXP_QUERY_STRING = "(?<=\\?).+";
     private static final String REGEXP_APP_NAME = "\\/(.*?)[\\/\\?]";
     private static final String REGEXP_URI = "(?:.*?\\/){2}(.+(?=\\?)|.+)";
-    private static final String REGEXP_SESSION_ID="[j]?sessionId=(.+(?=\\&)|.+)";
+    private static final String REGEXP_SESSION_ID = "[j]?sessionId=(.+(?=\\&)|.+)";
     private static final String JSESSIONID_COOKIE_NAME = "JSESSIONID";
+    private static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -44,9 +45,27 @@ public class HttpRequestParser {
         int contentLength = httpRequest.getIntHeader(HttpHeaderName.CONTENT_LENGTH.getHeaderName());
         httpRequest.setContentLength(contentLength);
         InputStream remainingRequestInputStream = getRemainingRequestInputStream(inputStream, contentLength);
-        log.debug("Setting request body stream of content length {}", contentLength);
+        String contentType = httpRequest.getHeader(HttpHeaderName.CONTENT_TYPE.getHeaderName());
+        if (APPLICATION_X_WWW_FORM_URLENCODED.equals(contentType)) {
+            log.debug("Request has parameters of content length", contentLength);
+            setParameters(httpRequest, remainingRequestInputStream);
+        } else {
+            log.debug("Setting request body stream of content length {}", contentLength);
+        }
         httpRequest.setInputStream(new RequestStream(remainingRequestInputStream));
         return httpRequest;
+    }
+
+    private void setParameters(HttpRequest httpRequest, InputStream inputStream) throws IOException {
+        try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);) {
+            String requestParamString = bufferedReader.readLine();
+            String[] requestParamStringSplitted = requestParamString.split("&");
+            for (String requestParamLine : requestParamStringSplitted) {
+                String[] requestParam = requestParamLine.split("=");
+                httpRequest.addParameter(requestParam[0], requestParam[1]);
+            }
+        }
     }
 
     InputStream getRemainingRequestInputStream(InputStream inputStream, int contentLength) throws IOException {
@@ -102,7 +121,7 @@ public class HttpRequestParser {
             String[] cookieNameValue = cookie.split("=");
             String name = cookieNameValue[0].trim();
             String value = cookieNameValue[1].trim();
-            if(name.equalsIgnoreCase(JSESSIONID_COOKIE_NAME)){
+            if (name.equalsIgnoreCase(JSESSIONID_COOKIE_NAME)) {
                 httpRequest.setSessionId(value);
                 httpRequest.setSessionIdFromCookie(true);
             }
@@ -125,7 +144,7 @@ public class HttpRequestParser {
         httpRequest.setRequestUri("/" + uri);
 
         String queryString = getMatchedString(REGEXP_QUERY_STRING, url, 0);
-        if(queryString!= null ){
+        if (queryString != null) {
             String matchedString = getMatchedString(REGEXP_SESSION_ID, queryString, 1);
             httpRequest.setSessionId(matchedString);
             httpRequest.setSessionIdFromUrl(true);

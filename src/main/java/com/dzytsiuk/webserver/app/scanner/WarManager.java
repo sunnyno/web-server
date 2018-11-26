@@ -42,7 +42,7 @@ public class WarManager {
     }
 
 
-    private String unpackWar(ZipFile zipFile) throws IOException {
+    String unpackWar(ZipFile zipFile) throws IOException {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         String fileName = zipFile.getName();
         String appFolder = fileName.replace(WAR_FILE_EXTENSION, "") + File.separator;
@@ -68,7 +68,6 @@ public class WarManager {
             else {
                 String uncompressedFileName = appFolder + entryName;
                 Path uncompressedFilePath = Paths.get(uncompressedFileName);
-                // Files.createFile(uncompressedFilePath);
                 Files.copy(zipFile.getInputStream(entry), uncompressedFilePath);
                 log.info("Written :" + entryName);
             }

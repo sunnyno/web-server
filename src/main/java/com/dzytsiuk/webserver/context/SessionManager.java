@@ -1,7 +1,7 @@
 package com.dzytsiuk.webserver.context;
 
-import com.dzytsiuk.webserver.context.executor.DaemonThreadFactory;
-import com.dzytsiuk.webserver.http.Session;
+import com.dzytsiuk.webserver.context.threadfactory.DaemonThreadFactory;
+import com.dzytsiuk.webserver.http.entity.Session;
 import com.dzytsiuk.webserver.util.AppUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,12 +11,14 @@ import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 public class SessionManager {
     private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
     private static final int SESSION_CHECK_RATE = Integer.parseInt(AppUtil.getApplicationProperty("session.check.rate"));
     private static final int SESSION_CHECK_DELAY_RATE = Integer.parseInt(AppUtil.getApplicationProperty("session.check.rate"));
+    private static final int SESSION_DEFAULT_TIMEOUT = Integer.parseInt(AppUtil.getApplicationProperty("session.default.timeout"));
     private static final int MILLISECONDS_IN_MINUTE = 60000;
     private final Logger log = LoggerFactory.getLogger(getClass());
     private Map<String, HttpSession> httpSessionMap = new ConcurrentHashMap<>();
@@ -42,7 +44,11 @@ public class SessionManager {
     }
 
     private boolean isInvalid(HttpSession session) {
-        return System.currentTimeMillis() - session.getLastAccessedTime() > session.getMaxInactiveInterval() * MILLISECONDS_IN_MINUTE;
+        int maxInactiveInterval = session.getMaxInactiveInterval();
+        if (maxInactiveInterval == 0) {
+            maxInactiveInterval = SESSION_DEFAULT_TIMEOUT;
+        }
+        return System.currentTimeMillis() - session.getLastAccessedTime() > maxInactiveInterval * MILLISECONDS_IN_MINUTE;
     }
 
     public HttpSession getSession(String sessionId, boolean create) {
@@ -60,5 +66,13 @@ public class SessionManager {
             ((Session) foundSession).setLastAccessTime(System.currentTimeMillis());
         }
         return foundSession;
+    }
+
+    public String changeSessionId(String sessionId){
+        HttpSession session = httpSessionMap.get(sessionId);
+        httpSessionMap.remove(sessionId);
+        String newSessionId = UUID.randomUUID().toString();
+        httpSessionMap.put(newSessionId, session);
+        return newSessionId;
     }
 }

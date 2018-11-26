@@ -1,6 +1,7 @@
 package com.dzytsiuk.webserver.http
 
 import com.dzytsiuk.webserver.http.entity.HttpHeaderName
+import com.dzytsiuk.webserver.http.entity.HttpRequest
 import org.junit.Test
 
 import static org.junit.Assert.*

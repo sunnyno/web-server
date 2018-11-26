@@ -1,7 +1,7 @@
 package com.dzytsiuk.webserver;
 
 import com.dzytsiuk.webserver.app.scanner.WebAppScanner;
-import com.dzytsiuk.webserver.http.HttpConnector;
+import com.dzytsiuk.webserver.http.connector.HttpConnector;
 import com.dzytsiuk.webserver.util.AppUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +29,9 @@ public class Starter {
 
         webAppScanner.initialScan();
         executorService.execute(webAppScanner::scan);
-        boolean isShutDown = httpConnector.connect();
-        if (isShutDown) {
-            executorService.shutdownNow();
-            UnicastRemoteObject.unexportObject(httpConnector, true);
-        }
+        httpConnector.connect();
+        executorService.shutdownNow();
+        UnicastRemoteObject.unexportObject(httpConnector, true);
     }
 
     private static void registerHttpConnectorRemote(HttpConnector connector, int port) {

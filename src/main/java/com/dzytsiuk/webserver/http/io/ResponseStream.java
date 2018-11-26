@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class ResponseStream extends ServletOutputStream {
-    private static final int DEFAULT_BUFFER_CAPACITY = 1024;
+    private static final int DEFAULT_BUFFER_CAPACITY = 1024 * 256;
     private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
     private HttpResponseWriter httpResponseWriter;
     private ByteBuffer byteBuffer;

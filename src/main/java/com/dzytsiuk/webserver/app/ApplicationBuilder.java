@@ -1,5 +1,6 @@
 package com.dzytsiuk.webserver.app;
 
+import com.dzytsiuk.webserver.app.entity.WebAppFilter;
 import com.dzytsiuk.webserver.app.entity.WebAppServlet;
 import com.dzytsiuk.webserver.context.AppServletContext;
 import com.dzytsiuk.webserver.context.Application;
@@ -15,7 +16,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -27,14 +27,14 @@ public class ApplicationBuilder {
 
     private ApplicationContainer applicationContainer = ApplicationContainer.getInstance();
 
-    public void buildApp(List<WebAppServlet> webAppServlets, String warFolder) {
+    public void buildApp(List<WebAppServlet> webAppServlets, List<WebAppFilter> webAppFilters, String warFolder) {
         //get classloader
         URLClassLoader webAppClassLoader = getClassLoader(warFolder);
-
         //get servlet context
         log.info("Constructing servlet context");
         AppServletContext appServletContext = new AppServletContext(webAppClassLoader);
         appServletContext.setWebAppServlets(webAppServlets);
+        appServletContext.setWebAppFilters(webAppFilters);
 
         //create app
         String appName = warFolder.split(File.separator)[1];
@@ -71,4 +71,7 @@ public class ApplicationBuilder {
         }
     }
 
+    ApplicationContainer getApplicationContainer() {
+        return applicationContainer;
+    }
 }

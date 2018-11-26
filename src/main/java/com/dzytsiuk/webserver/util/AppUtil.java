@@ -7,7 +7,7 @@ public class AppUtil {
     private static final String APP_PROP_FILENAME = "application.properties";
     private static Properties properties;
 
-    public static void init() {
+    private static void init() {
         try (InputStream is = AppUtil.class.getClassLoader().getResourceAsStream(APP_PROP_FILENAME)) {
             properties = new Properties();
             properties.load(is);

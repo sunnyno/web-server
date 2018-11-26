@@ -1,6 +1,6 @@
 package com.dzytsiuk.webserver.http.processor;
 
-import com.dzytsiuk.webserver.http.HttpResponse;
+import com.dzytsiuk.webserver.http.entity.HttpResponse;
 import com.dzytsiuk.webserver.http.entity.*;
 
 import javax.servlet.http.Cookie;
@@ -80,7 +80,7 @@ public class HttpResponseWriter {
         HttpVersion httpVersion = httpResponse.getHttpVersion();
         outputStream.write((httpVersion.getName() + " ").getBytes());
         HttpStatus status = httpResponse.getHttpStatus();
-        outputStream.write(status.getCode().getBytes());
+        outputStream.write(String.valueOf(status.getCode()).getBytes());
         String message = status.getMessage();
         if (message != null) {
             outputStream.write((" " + message).getBytes());
@@ -103,7 +103,7 @@ public class HttpResponseWriter {
         isHeaderWritten = true;
     }
 
-    String getCookieString() throws IOException {
+    String getCookieString() {
         List<Cookie> cookies = httpResponse.getCookies();
         if (cookies == null) {
             return null;

@@ -1,16 +1,23 @@
 package com.dzytsiuk.webserver.context;
 
+import com.dzytsiuk.webserver.app.entity.WebAppFilter;
+import com.dzytsiuk.webserver.app.entity.WebAppFilterChain;
 import com.dzytsiuk.webserver.app.entity.WebAppServlet;
+import com.dzytsiuk.webserver.util.AppUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.descriptor.JspConfigDescriptor;
 import javax.servlet.http.HttpServlet;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,9 +25,14 @@ import java.util.stream.Collectors;
 
 public class AppServletContext implements ServletContext {
     private static final String WEB_SERVER_INFO = "Web Server v1";
+    private static final int SESSION_DEFAULT_TIMEOUT = Integer.parseInt(AppUtil.getApplicationProperty("session.default.timeout"));
     private static final String GENERAL_URL_PATTERN = "/*";
     private static final String DEFAULT_URL_PATTERN = "/";
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private List<WebAppFilter> webAppFilters;
+    private Map<String, Filter> httpFilters = new HashMap<>();
+    private WebAppFilter generalWebAppFilter;
+    private WebAppFilter defaultWebAppFilter;
     private List<WebAppServlet> webAppServlets;
     private WebAppServlet generalWebAppServlet;
     private WebAppServlet defaultWebAppServlet;
@@ -28,6 +40,7 @@ public class AppServletContext implements ServletContext {
     private final URLClassLoader classLoader;
     private String contextPath;
     private Map<String, Object> attributes = new HashMap<>();
+    private Map<String, String> initParameters = new HashMap<>();
 
     public AppServletContext(URLClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -40,36 +53,48 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public ServletContext getContext(String uripath) {
+        if (contextPath.contains(uripath)) {
+            return this;
+        }
         return null;
     }
 
     @Override
     public int getMajorVersion() {
-        return 2;
+        return 4;
     }
 
     @Override
     public int getMinorVersion() {
-        return 5;
+        return 2;
     }
 
     @Override
     public int getEffectiveMajorVersion() {
-        return 0;
+        return 4;
     }
 
     @Override
     public int getEffectiveMinorVersion() {
-        return 0;
+        return 2;
     }
 
     @Override
     public String getMimeType(String file) {
-        return null;
+        URL resource = classLoader.findResource(file);
+        if (resource == null) {
+            return null;
+        } else {
+            try {
+                return Files.probeContentType(Paths.get(resource.toURI()));
+            } catch (IOException | URISyntaxException e) {
+                throw new RuntimeException("Error getting MIME type of resource");
+            }
+        }
     }
 
     @Override
-    public Set getResourcePaths(String path) {
+    public Set<String> getResourcePaths(String path) {
         URL[] urLs = classLoader.getURLs();
         Set<String> requestedPath = new HashSet<>();
         List<String> contextPathUrlList = getContextPathUrlList(urLs);
@@ -109,17 +134,18 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public Servlet getServlet(String name) throws ServletException {
-        return null;
+        return httpServlets.get(name);
     }
 
     @Override
-    public Enumeration getServlets() {
-        return Collections.emptyEnumeration();
+    public Enumeration<Servlet> getServlets() {
+        List<Servlet> servlets = new ArrayList<>(httpServlets.values());
+        return Collections.enumeration(servlets);
     }
 
     @Override
-    public Enumeration getServletNames() {
-        return Collections.emptyEnumeration();
+    public Enumeration<String> getServletNames() {
+        return Collections.enumeration(httpServlets.keySet());
     }
 
     @Override
@@ -162,17 +188,20 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public String getInitParameter(String name) {
-        return null;
+        if (name == null) {
+            throw new NullPointerException();
+        }
+        return initParameters.get(name);
     }
 
     @Override
-    public Enumeration getInitParameterNames() {
-        return null;
+    public Enumeration<String> getInitParameterNames() {
+        return Collections.enumeration(initParameters.keySet());
     }
 
     @Override
     public boolean setInitParameter(String name, String value) {
-        return false;
+        return initParameters.put(name, value) != null;
     }
 
     @Override
@@ -181,7 +210,7 @@ public class AppServletContext implements ServletContext {
     }
 
     @Override
-    public Enumeration getAttributeNames() {
+    public Enumeration<String> getAttributeNames() {
         return Collections.enumeration(attributes.keySet());
     }
 
@@ -202,72 +231,72 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName, String className) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName, Servlet servlet) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public ServletRegistration.Dynamic addServlet(String servletName, Class<? extends Servlet> servletClass) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public ServletRegistration.Dynamic addJspFile(String servletName, String jspFile) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public <T extends Servlet> T createServlet(Class<T> clazz) throws ServletException {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public ServletRegistration getServletRegistration(String servletName) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public Map<String, ? extends ServletRegistration> getServletRegistrations() {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Servlet registration is not supported");
     }
 
     @Override
     public FilterRegistration.Dynamic addFilter(String filterName, String className) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public FilterRegistration.Dynamic addFilter(String filterName, Filter filter) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public FilterRegistration.Dynamic addFilter(String filterName, Class<? extends Filter> filterClass) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public <T extends Filter> T createFilter(Class<T> clazz) throws ServletException {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public FilterRegistration getFilterRegistration(String filterName) {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public Map<String, ? extends FilterRegistration> getFilterRegistrations() {
-        return null;
+        throw new UnsupportedOperationException("Dynamic Filter registration is not supported");
     }
 
     @Override
     public SessionCookieConfig getSessionCookieConfig() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -312,7 +341,7 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public ClassLoader getClassLoader() {
-        return null;
+        return classLoader;
     }
 
     @Override
@@ -322,17 +351,17 @@ public class AppServletContext implements ServletContext {
 
     @Override
     public String getVirtualServerName() {
-        return null;
+        return WEB_SERVER_INFO;
     }
 
     @Override
     public int getSessionTimeout() {
-        return 0;
+        return SESSION_DEFAULT_TIMEOUT;
     }
 
     @Override
     public void setSessionTimeout(int sessionTimeout) {
-
+        throw new IllegalStateException("Servlet Context already initialized");
     }
 
     @Override
@@ -355,6 +384,18 @@ public class AppServletContext implements ServletContext {
 
     }
 
+    public void setWebAppFilters(List<WebAppFilter> webAppFilters) {
+        for (WebAppFilter webAppFilter : webAppFilters) {
+            if (GENERAL_URL_PATTERN.equals(webAppFilter.getUriPattern())) {
+                generalWebAppFilter = webAppFilter;
+            } else if (DEFAULT_URL_PATTERN.equals(webAppFilter.getUriPattern())) {
+                defaultWebAppFilter = webAppFilter;
+            }
+        }
+        webAppFilters.remove(generalWebAppFilter);
+        this.webAppFilters = webAppFilters;
+    }
+
     public void setWebAppServlets(List<WebAppServlet> webAppServlets) {
         for (WebAppServlet webAppServlet : webAppServlets) {
             if (GENERAL_URL_PATTERN.equals(webAppServlet.getUriPattern())) {
@@ -375,7 +416,7 @@ public class AppServletContext implements ServletContext {
                 .sorted(Comparator.comparingInt(WebAppServlet::getLoadOnStartup))
                 .collect(Collectors.toList());
         for (WebAppServlet servlet : loadOnStartUpServlets) {
-            loadClass(servlet);
+            loadServlet(servlet);
         }
         log.info("Finish loading onStartup servlets");
     }
@@ -384,6 +425,15 @@ public class AppServletContext implements ServletContext {
         WebAppServlet webAppServlet = getWebAppServletByUrlPattern(requestURI);
         log.info("Servlet for uri {} is {}", requestURI, webAppServlet);
         return webAppServlet != null ? getServletInstance(webAppServlet) : null;
+    }
+
+    FilterChain getFilterChainByUrlPattern(String requestURI) {
+        List<WebAppFilter> webAppFilters = getWebAppFiltersByUrlPattern(requestURI);
+        ArrayDeque<Filter> filters = new ArrayDeque<>();
+        for (WebAppFilter appFilter : webAppFilters) {
+            filters.addLast(getFilterInstance(appFilter));
+        }
+        return new WebAppFilterChain(filters);
     }
 
     String getHttpServletPath(HttpServlet httpServlet) {
@@ -423,7 +473,7 @@ public class AppServletContext implements ServletContext {
         return defaultWebAppServlet;
     }
 
-    private HttpServlet loadClass(WebAppServlet servlet) {
+    private HttpServlet loadServlet(WebAppServlet servlet) {
         try {
             String servletClassName = servlet.getClassName();
             HttpServlet servletInstance = (HttpServlet) classLoader.loadClass(servletClassName).newInstance();
@@ -433,6 +483,50 @@ public class AppServletContext implements ServletContext {
             return servletInstance;
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | ServletException e) {
             throw new RuntimeException("Error instantiating servlet ", e);
+        }
+    }
+
+    private List<WebAppFilter> getWebAppFiltersByUrlPattern(String requestURI) {
+        List<WebAppFilter> filtersForRequest = new ArrayList<>();
+        //lookup for equal uri servlet
+        WebAppFilter webAppFilter = webAppFilters.stream()
+                .filter(filter -> requestURI.equals(filter.getUriPattern()))
+                .findFirst().orElse(null);
+        if (webAppFilter != null) {
+            filtersForRequest.add(webAppFilter);
+        }
+
+        //lookup for wildcard uri servlet
+        webAppFilter = webAppFilters.stream()
+                .filter(filter -> isUriMatched(filter.getUriPattern(), requestURI))
+                .findFirst().orElse(null);
+        if (webAppFilter != null) {
+            filtersForRequest.add(webAppFilter);
+        }
+
+        //lookup for general filter
+        if (generalWebAppFilter != null) {
+            filtersForRequest.add(generalWebAppFilter);
+        }
+
+        //lookup for default filter
+        if (defaultWebAppFilter != null) {
+            filtersForRequest.add(defaultWebAppFilter);
+        }
+        return filtersForRequest;
+    }
+
+
+    private Filter loadFilter(WebAppFilter filter) {
+        try {
+            String filterClassName = filter.getClassName();
+            Filter filterInstance = (Filter) classLoader.loadClass(filterClassName).newInstance();
+            filterInstance.init(null);
+            httpFilters.put(filter.getName(), filterInstance);
+            log.info("Object of class {} created", filterClassName);
+            return filterInstance;
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | ServletException e) {
+            throw new RuntimeException("Error instantiating filter ", e);
         }
     }
 
@@ -450,9 +544,17 @@ public class AppServletContext implements ServletContext {
     private HttpServlet getServletInstance(WebAppServlet webAppServlet) {
         HttpServlet httpServlet = httpServlets.get(webAppServlet.getName());
         if (httpServlet == null) {
-            httpServlet = loadClass(webAppServlet);
+            httpServlet = loadServlet(webAppServlet);
         }
         return httpServlet;
+    }
+
+    Filter getFilterInstance(WebAppFilter webAppFilter) {
+        Filter filter = httpFilters.get(webAppFilter.getName());
+        if (filter == null) {
+            filter = loadFilter(webAppFilter);
+        }
+        return filter;
     }
 
     public void setContextPath(String contextPath) {
@@ -477,6 +579,10 @@ public class AppServletContext implements ServletContext {
         log.info("Destroying servlets");
         for (HttpServlet httpServlet : httpServlets.values()) {
             httpServlet.destroy();
+        }
+        log.info("Destroying filters");
+        for (Filter filter : httpFilters.values()) {
+            filter.destroy();
         }
     }
 }

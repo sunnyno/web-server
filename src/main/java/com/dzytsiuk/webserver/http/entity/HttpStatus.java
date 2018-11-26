@@ -1,19 +1,19 @@
 package com.dzytsiuk.webserver.http.entity;
 
 public class HttpStatus {
-    private final String code;
+    private int code;
     private String message;
 
     public HttpStatus(Integer code, String message) {
-        this.code = String.valueOf(code);
+        this.code = code;
         this.message = message;
     }
 
     public HttpStatus(StandardHttpStatus standardHttpStatus) {
-        this.code = String.valueOf(standardHttpStatus.getCode());
+        this.code = standardHttpStatus.getCode();
     }
 
-    public String getCode() {
+    public int getCode() {
         return code;
     }
 

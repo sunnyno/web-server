@@ -1,8 +1,8 @@
 package com.dzytsiuk.webserver.http.processor;
 
 import com.dzytsiuk.webserver.exception.HttpException;
-import com.dzytsiuk.webserver.http.HttpRequest;
-import com.dzytsiuk.webserver.http.HttpResponse;
+import com.dzytsiuk.webserver.http.entity.HttpRequest;
+import com.dzytsiuk.webserver.http.entity.HttpResponse;
 import com.dzytsiuk.webserver.http.entity.StandardHttpStatus;
 import com.dzytsiuk.webserver.http.io.ResponseStream;
 

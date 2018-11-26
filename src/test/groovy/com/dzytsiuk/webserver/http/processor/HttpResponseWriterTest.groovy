@@ -1,12 +1,10 @@
 package com.dzytsiuk.webserver.http.processor
 
-import com.dzytsiuk.webserver.exception.HttpException
-import com.dzytsiuk.webserver.http.HttpResponse
+import com.dzytsiuk.webserver.http.entity.HttpResponse
 import com.dzytsiuk.webserver.http.entity.HttpVersion
 import org.junit.Test
 
 import javax.servlet.http.Cookie
-import java.nio.ByteBuffer
 
 import static org.junit.Assert.*
 

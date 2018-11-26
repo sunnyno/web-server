@@ -1,6 +1,5 @@
 .idea
 target
 *.iml
-webapps/*
 web-server*.jar
 *.pid
